@@ -1,0 +1,105 @@
+Time Command Output (Before Refactoring)
+
+Run #1
+real    1m56.302s
+user    0m34.790s
+sys     0m0.570s
+
+Run #2
+real    2m3.672s
+user    0m34.190s
+sys     0m0.450s
+
+Run #3
+real    1m56.753s
+user    0m33.750s
+sys     0m0.590s
+
+Run #4
+real    2m1.585s
+user    0m35.980s
+sys     0m0.500s
+
+Run #5
+real    1m40.180s
+user    0m34.400s
+sys     0m0.530s
+
+Run #6
+real    1m55.817s
+user    0m34.110s
+sys     0m0.490s
+
+Run #7
+real    1m47.342s
+user    0m34.540s
+sys     0m0.450s
+
+Run #8
+real    1m37.599s
+user    0m35.010s
+sys     0m0.480s
+
+Run #9
+real    1m57.075s
+user    0m34.770s
+sys     0m0.490s
+
+Run #10
+real    1m36.078s
+user    0m33.630s
+sys     0m0.510s
+
+
+---------------------------
+Time Command Output (After Refactoring)
+
+Run #1
+real    1m59.561s
+user    0m34.030s
+sys     0m0.390s
+
+Run #2
+real    1m57.479s
+user    0m33.360s
+sys     0m0.520s
+
+Run #3
+real    1m38.523s
+user    0m34.440s
+sys     0m0.480s
+
+Run #4
+real    2m11.106s
+user    0m34.330s
+sys     0m0.350s
+
+Run #5
+real    1m59.088s
+user    0m34.230s
+sys     0m0.450s
+
+Run #6
+real    1m49.837s
+user    0m35.280s
+sys     0m0.620s
+
+Run #7
+real    2m0.471s
+user    0m34.180s
+sys     0m0.540s
+
+Run #8
+real    2m8.022s
+user    0m34.140s
+sys     0m0.490s
+
+Run #9
+real    1m55.611s
+user    0m34.260s
+sys     0m0.440s
+
+Run #10
+real    1m42.462s
+user    0m35.950s
+sys     0m0.540s
