@@ -9,42 +9,53 @@ courseUrlPrefix = "https://www.onepa.sg/class/details/"
 def getAllCourseListing(url, operator):
 	
 	cookieResponseObj = requests.post("https://www.onepa.sg/cat/kayaking")
+	page = 1
+	outputListing = []
+	newIterationListingCount = 1
+	
+	# while loop added to handle pagination
+	while (newIterationListingCount > 0): 
+		newIterationListingCount = 0
+		# Check if site is unavailable
+		if (cookieResponseObj.status_code != 200 or "unavailable" in cookieResponseObj.text):
+			print ("Operator site is unavailable")
+			print ("    Step: Get cookie from site")
+			print ("    Operator: " + operator)
+			print ("    URL: " + url)
+			saveSiteDownStatus(True)
+			return;
 
-	# Check if site is unavailable
-	if (cookieResponseObj.status_code != 200 or "unavailable" in cookieResponseObj.text):
-		print ("Operator site is unavailable")
-		print ("    Step: Get cookie from site")
-		print ("    Operator: " + operator)
-		print ("    URL: " + url)
-		saveSiteDownStatus(True)
-		return;
+		payload = {"cat":"kayaking", "subcat":"", "sort":"", "filter":"[filter]", "cp":page}
+		headers_custom = {"Content-Type":"application/json; charset=UTF-8"}
+		
+		# Get Course Listing based on URL argument 
+		urlResponseObj = requests.post(url, data = json.dumps(payload), headers = headers_custom, cookies = cookieResponseObj.cookies )
+		
+		# Check if site is unavailable
+		if (urlResponseObj.status_code != 200):
+			print ("Operator site is unavailable")
+			print ("    Step: Get a list of courses")
+			print ("    Operator: " + operator)
+			print ("    URL: " + url)
+			saveSiteDownStatus(True)
+			return;
+		
+		# Extract the course listing in the Json key "d"
+		urlResponseJson = json.loads(urlResponseObj.text)
+		
+		# Construct a BeautifulSoup Object 
+		soupHtml = BeautifulSoup(urlResponseJson["d"], "html.parser")
+		
+		# Extract out an array of courses
+		thisIterCourseListing = soupHtml.find_all("table1")
 
+		for item in thisIterCourseListing: 
+			if item not in outputListing:
+				outputListing.append(item)
+				newIterationListingCount = newIterationListingCount + 1
+				page = page + 1
 
-	payload = {"cat":"kayaking", "subcat":"", "sort":"", "filter":"[filter]", "cp":"[cp]"}
-	headers_custom = {"Content-Type":"application/json; charset=UTF-8"}
-	
-	# Get Course Listing based on URL argument 
-	urlResponseObj = requests.post(url, data = json.dumps(payload), headers = headers_custom, cookies = cookieResponseObj.cookies )
-	
-	# Check if site is unavailable
-	if (urlResponseObj.status_code != 200):
-		print ("Operator site is unavailable")
-		print ("    Step: Get a list of courses")
-		print ("    Operator: " + operator)
-		print ("    URL: " + url)
-		saveSiteDownStatus(True)
-		return;
-	
-	# Extract the course listing in the Json key "d"
-	urlResponseJson = json.loads(urlResponseObj.text)
-	
-	# Construct a BeautifulSoup Object 
-	soupHtml = BeautifulSoup(urlResponseJson["d"], "html.parser")
-	
-	# Extract out an array of courses
-	allCourseListing = soupHtml.find_all("table1")
-	
-	return allCourseListing
+	return outputListing 
 
 
 def filterCourseListing (allCourseListing):
@@ -58,12 +69,12 @@ def filterCourseListing (allCourseListing):
 	# Error Checking - empty list
 	if allCourseListing is None: 
 		return [];
-	
+
 	allFilteredCourseListing = []
 	for course in allCourseListing: 
 		if course.labelname.string == "Class" and datetime.strptime(course.startdate.string, "%d %b %Y").date() > datetime.today().date() and course.maxvacancy.string != "Full":
 			allFilteredCourseListing.append(course.code.string.lower())
-			
+
 	return allFilteredCourseListing
 
 
@@ -76,7 +87,7 @@ def processFilteredCourses (allFilteredCourseUrl):
 	allCourseDetails = []
 	
 	for courseUrl in allFilteredCourseUrl: 
-		
+
 		courseBeautifulSoup = getIndividualCoursePage(courseUrlPrefix + courseUrl)
 		
 		allCourseDetails.append(extractInfoFromCoursePage(courseBeautifulSoup))
@@ -146,17 +157,17 @@ def formatInfoForHosting (allCourseDetails):
 	for c in allCourseDetails: 
 		formatted = formatCourseForGitHub(c)
 		
-		if (c["classType"].upper() == "KAYAKING 1 STAR AWARD"): 
+		if ("KAYAKING 1 STAR" in c["classType"].upper()): 
 			oneStarOutput +=  formatted + "\n"
-		elif (c["classType"].upper() == "KAYAKING 2 STAR AWARD"): 
+		elif ("KAYAKING 2 STAR" in c["classType"].upper()): 
 			twoStarOutput +=  formatted + "\n"
-		elif (c["classType"].upper() == "KAYAKING 3 STAR AWARD"): 
-			threeStarOutput +=  formatted + "\n"
-		elif (c["classType"].upper() == "KAYAKING 3 STAR ASSESSMENT"): 
+		elif ("KAYAKING 3 STAR ASSESSMENT" in c["classType"].upper()): 
 			threeStarAssessmentOutput +=  formatted + "\n"
-		elif (c["classType"].upper() == "KAYAKING 4 STAR AWARD"): 
+		elif ("KAYAKING 3 STAR" in c["classType"].upper()): 
+			threeStarOutput +=  formatted + "\n"
+		elif ("KAYAKING 4 STAR" in c["classType"].upper()): 
 			fourStarOutput +=  formatted + "\n"
-		elif (c["classType"].upper() == "KAYAKING LEVEL 1 COACH TRAINING COURSE"): 
+		elif ("KAYAKING LEVEL 1 COACH" in c["classType"].upper()): 
 			levelOneOutput +=  formatted + "\n"
 		else: 
 			activityOutput += "[" + c["title"] + " " + formatted[1:] + "\n"
@@ -179,7 +190,7 @@ def formatCourseForGitHub (courseDictionary):
 	# Special clean up for dates 
 	courseDictionary["dates"] = courseDictionary["dates"].replace("From", "").replace("To", "<br/><br/>to<br/><br/>")
 	
-	return "[" + courseDictionary["courseRefCode"] + "](" + courseDictionary["courseUrl"] + ")|" + courseDictionary["dates"] + "|" + courseDictionary["venue"] + "|" + courseDictionary["vacancy"]# + "<br /><br /> _(Register by: " + courseDictionary["regClose"] + ")_"
+	return "[" + courseDictionary["courseRefCode"] + "](" + courseDictionary["courseUrl"] + ")|" + courseDictionary["dates"] + "|" + courseDictionary["venue"].upper() + "|" + courseDictionary["vacancy"]# + "<br /><br /> _(Register by: " + courseDictionary["regClose"] + ")_"
 
 
 def sortCoursesByDate (activityDictionaryList):
